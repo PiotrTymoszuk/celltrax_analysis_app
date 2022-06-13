@@ -140,7 +140,7 @@
                            median = 'Median displacement per step')
 
       speed_title <- switch(input$disp_aggregate,
-                            total = 'Total velocity vector length',
+                            total = 'Mean speed per step',
                             mean = 'Mean speed per step',
                             median = 'Median speed per step')
 
@@ -151,7 +151,8 @@
              color = input$disp_color,
              type = 'statistic',
              geom = input$disp_geom,
-             cust_theme = theme_shiny())
+             cust_theme = theme_shiny(),
+             aggregate = input$disp_aggregate)
 
       if(input$disp_geom != 'histogram') {
 
@@ -421,8 +422,8 @@
     autocov_plots <- reactive({
 
       list(method = c('dot_product', 'angle'),
-           plot_title = c('Autocovariance: displacement vectors',
-                          'Autocovariance: angles'),
+           plot_title = c('Auto-covariance: displacement vectors',
+                          'Auto-covariance: angles'),
            plot_subtitle = c('Mean dot product between displacement vectors',
                              'Mean overall angle between displacement vectors')) %>%
         pmap(plot,
@@ -435,7 +436,10 @@
                   'displacement vector angle, radians'),
              ~.x +
                labs(y = .y) +
-               scale_y_continuous(trans = input$autocov_y_scale))
+               scale_y_continuous(trans = input$autocov_y_scale)) %>%
+        map2(., c(0, 1.57079633),
+             ~.x +
+               geom_hline(yintercept = .y, linetype = 'dashed'))
 
     })
 
@@ -637,6 +641,7 @@
       track_color <- if(input$monochrome == 'yes') input$track_color else NULL
 
       list(normalize = c(FALSE, TRUE),
+           show_zero = c(FALSE, TRUE),
            plot_title = c('Total displacement vectors',
                           'Normalized total displacement vectors')) %>%
         pmap(plot,
@@ -1084,7 +1089,7 @@
                           set_names(c('tracks', 'tracks_normalized')),
                         vector_plots() %>%
                           set_names(c('vectors', 'vectors_normalized')),
-                        hotellings_plot = hotellings_plot(),
+                        list(hotellings_plot = hotellings_plot()),
                         red_plots() %>%
                           set_names(c('dimension_red_scree',
                                       'dimension_red_scores'))) %>%

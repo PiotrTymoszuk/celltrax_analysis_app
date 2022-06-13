@@ -196,16 +196,16 @@
 
   autocov_plots <- function() {
 
-    tabPanel('Autocovariance',
-             h3('Movement persistence: autocovariance of displacement vectors'),
+    tabPanel('Auto-covariance',
+             h3('Movement persistence: autoc-ovariance of displacement vectors'),
              br(),
              p("By investigating of covariance of subsequent displacement vectors of a track,
                persistent, directional motion of a cell may be investigated. This tool
-               offers two methods of autocovariance calculation: by computing dot products
+               offers two methods of auto-covariance calculation: by computing dot products
                and by measuring angles between the subsequent displacement vectors of each
                track. Mean statistic per step is presented."),
              hr(),
-             h4('Autocovariance'),
+             h4('Auto-covariance'),
              br(),
              fluidRow(column(width = 4,
                              selectInput(inputId = 'autocov_color',
@@ -470,7 +470,7 @@
              br(),
              p("This tool enables you to save the analysis results in tabular
              form including tracks data table, a table with track statistics,
-             autocovariance, Hotelling's test and dimensionality reduction
+             auto-covariance, Hotelling's test and dimensionality reduction
              results. Finally, you may save the entire analysis bundle
              (tracks/trax object, plots and statistic tables) as a .RDa
              R data storage file and continue with analysis and plot adjustment
@@ -483,17 +483,16 @@
                              downloadButton(outputId = 'download_trax',
                                             label = 'download tracks')),
                       column(width = 4,
-                             p("Download summary of statistics for each track,
-                               autocovariance and Hotelling's test results"),
+                             p("Download summary of statistics"),
                              downloadButton(outputId = 'download_stats',
                                             label = 'download stats')),
                       column(width = 4,
-                             p('Download dimensionality reduction results for the selected
-                             algorithm (PCA, UMAP, MDS), dimension number and distance metric'),
+                             p('Download dimensionality reduction results'),
                              downloadButton(outputId = 'download_red_tbl',
                                             label = 'download results'))),
+             br(),
              fluidRow(column(width = 4,
-                             p('Download an R data bundle (tracks object, statistics and plots'),
+                             p('Download an R data bundle'),
                              downloadButton(outputId = 'download_bundle',
                                             label = 'download R data'))))
 
