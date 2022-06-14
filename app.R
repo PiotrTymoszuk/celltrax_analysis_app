@@ -7,6 +7,7 @@
   library(tidyverse)
   library(shiny)
   library(shinyWidgets)
+  library(shinyjs)
   library(celltrax)
   library(waiter)
   library(writexl)
@@ -17,12 +18,15 @@
   source('./tools/styles.R')
   source('./tools/main_panels.R')
   source('./tools/tabsets.R')
+  source('./tools/utils.R')
 
   options(shiny.usecairo = FALSE)
 
 # User interface -----
 
   ui <- fluidPage(
+
+    useShinyjs(),
 
     ## progress bar
 
@@ -71,13 +75,58 @@
 
     })
 
+    ## Input-specific GUI -----
+
+    spy_results <- eventReactive(input$data_entry, {
+
+      file <- input$data_entry
+
+      spy_file(file$datapath)
+
+    })
+
+    output$selectors <- renderUI({
+
+      if(is.null(input$data_entry)) return(NULL)
+
+      tagList(selectInput('id_name',
+                          label = 'track ID column',
+                          choices = spy_results()$col_names,
+                          selected = spy_results()$id_col),
+              selectInput('t_name',
+                          label = 'time column',
+                          choices = spy_results()$col_names,
+                          selected = spy_results()$t_col),
+              selectInput('x_name',
+                          label = 'X coordinate column',
+                          choices = spy_results()$col_names,
+                          selected = spy_results()$x_col),
+              selectInput('y_name',
+                          label = 'Y coordinate column',
+                          choices = spy_results()$col_names,
+                          selected = spy_results()$y_col),
+              selectInput('z_name',
+                          label = 'Z coordinate column',
+                          choices = c('', spy_results()$col_names),
+                          selected = NULL))
+
+    })
+
     ## Table with input tracks, catching entry errors ----
 
     input_data <- eventReactive(input$launcher, {
 
       file <- input$data_entry
 
-      output <- try(read_trax(file$datapath), silent = TRUE)
+      z_entry <- if(input$z_name == '') NULL else input$z_name
+
+      output <- try(read_trax_text(file = file$datapath,
+                                   id_name = input$id_name,
+                                   t_name = input$t_name,
+                                   x_name = input$x_name,
+                                   y_name = input$y_name,
+                                   z_name = z_entry),
+                    silent = TRUE)
 
       if(any(class(output) == 'try-error')) {
 
@@ -85,10 +134,10 @@
 
       }
 
-      if(length(output) > 1000) {
+      if(length(output) > 1500) {
 
         output <- structure('Input error: data limit reached.
-                            The app can process up to 1000 tracks.',
+                            The app can process up to 1500 tracks.',
                             class = 'try-error')
 
       } else {
@@ -105,6 +154,9 @@
         }
 
       }
+
+      hide('data_entry')
+      hide('selectors')
 
       output
 
@@ -410,7 +462,8 @@
         pmap(calculate,
              x = input_data(),
              type = 'autocov',
-             aggregate = TRUE) %>%
+             aggregate = TRUE,
+             na.rm = TRUE) %>%
         reduce(full_join, by = 'i') %>%
         set_names(c('Step i',
                     'Displacement vector dot product',
@@ -987,6 +1040,36 @@
 
     )
 
+    summary_output <- reactive({
+
+      tab_names <- c(id = 'Track ID',
+                     steps = 'step number',
+                     length = 'track length',
+                     duration = 'track duration',
+                     delta_BIC = 'motility type, delta BIC',
+                     total_displacement = 'total displacement',
+                     mean_displacement = 'mean displacement per step',
+                     median_displacement = 'median displacement per step',
+                     mean_speed = 'mean speed per step',
+                     median_speed = 'median speed per step',
+                     overall_angle = 'overall displacement angle, radians',
+                     mean_angle = 'mean displacement angle per step, radians',
+                     overall_dot = 'overall displacement vector dot product',
+                     normal_dot = 'normalized displacement vector dot product',
+                     straightness = 'straightness',
+                     asphericity = 'asphericity',
+                     x_displ = 'X displacement',
+                     y_displ = 'Y displacement',
+                     z_displ = 'Z displacement')
+
+      tab_names <- tab_names[names(sum_stats())]
+
+      set_names(sum_stats(),
+                unname(tab_names))
+
+
+    })
+
     output$download_stats <- downloadHandler(
 
       filename = function() {
@@ -997,26 +1080,7 @@
 
       content = function(con) {
 
-        list(`Summary statistics` = sum_stats() %>%
-               set_names(c('Track ID',
-                           'step number',
-                           'track length',
-                           'track duration',
-                           'motility type, delta BIC',
-                           'total displacement',
-                           'mean displacement per step',
-                           'median displacement per step',
-                           'mean speed per step',
-                           'median speed per step',
-                           'overall displacement angle, radians',
-                           'mean displacement angle per step, radians',
-                           'overall displacement vector dot product',
-                           'normalized displacement vector dot product',
-                           'straightness',
-                           'asphericity',
-                           'X displacement',
-                           'Y displacement',
-                           'Z displacement')),
+        list(`Summary statistics` = summary_output(),
              `Autocovariance` = autocov_stats(),
              `Hotelling's test` = test_results() %>%
                set_names(c('t statistic',

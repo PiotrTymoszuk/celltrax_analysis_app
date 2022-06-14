@@ -25,6 +25,7 @@
                            label = 'Choose the file',
                            multiple = FALSE,
                            accept = c('.tsv', '.csv', '.txt')),
+                 uiOutput('selectors'),
                  h4('Step 2'),
                  h5('Start the analysis'),
                  actionButton(inputId = 'launcher',

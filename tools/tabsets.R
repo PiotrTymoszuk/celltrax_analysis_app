@@ -5,6 +5,7 @@
   general_info <- function() {
 
     tabPanel('General information',
+             textOutput('test'),
              h3('Welcome to celltrax tracing analysis tools!'),
              hr(),
              p("The celltrax analysis application is an interactive implementation of ",
