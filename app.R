@@ -53,6 +53,7 @@
         tabsetPanel(id = 'tab_status',
                     general_info(),
                     track_stats(),
+                    motility(),
                     autocov_plots(),
                     pair_analysis(),
                     dir_analysis(),
@@ -83,6 +84,12 @@
       file <- input$data_entry
 
       spy_file(file$datapath)
+
+    })
+
+    observeEvent(input$data_entry, {
+
+      enable('launcher')
 
     })
 
@@ -176,7 +183,7 @@
 
       updateProgressBar(id = 'pb',
                         value = 1,
-                        total = 6,
+                        total = 8,
                         title = 'Data imported')
 
     })
@@ -229,6 +236,20 @@
     output$speed_plot <- renderPlot({
 
       disp_plots()[[2]]
+
+    })
+
+    observe({
+
+      if(!is.null(input$disp_hover)) {
+
+        show('download_disp1')
+
+      } else {
+
+        hide('download_disp1')
+
+      }
 
     })
 
@@ -355,7 +376,26 @@
 
     )
 
-    ### delta BIC
+    qc <- observe({
+
+      if(!all(c(is.ggplot(disp_plots()[[1]]),
+                is.ggplot(straight_plots()[[1]])))) {
+
+        showNotification('Track statistic computation error',
+                         duration = NULL,
+                         closeButton = TRUE,
+                         type = 'error')
+
+      }
+
+      updateProgressBar(id = 'pb',
+                        value = 2,
+                        total = 8,
+                        title = 'Track statistic')
+
+    })
+
+    ## delta BIC --------
 
     bic_plots <- reactive({
 
@@ -441,7 +481,7 @@
                 is.ggplot(straight_plots()[[1]]),
                 is.ggplot(bic_plots()[[1]])))) {
 
-        showNotification('Track statistic computation error',
+        showNotification('Motility modeling error',
                          duration = NULL,
                          closeButton = TRUE,
                          type = 'error')
@@ -449,9 +489,9 @@
       }
 
       updateProgressBar(id = 'pb',
-                        value = 2,
-                        total = 6,
-                        title = 'Track statistic')
+                        value = 3,
+                        total = 7,
+                        title = 'Motility modeling')
 
     })
 
@@ -566,8 +606,8 @@
       }
 
       updateProgressBar(id = 'pb',
-                        value = 3,
-                        total = 6,
+                        value = 4,
+                        total = 7,
                         title = 'Displacement autocovariance')
 
     })
@@ -665,8 +705,8 @@
       }
 
       updateProgressBar(id = 'pb',
-                        value = 3,
-                        total = 6,
+                        value = 5,
+                        total = 8,
                         title = 'Cell pair analysis')
 
     })
@@ -1067,8 +1107,8 @@
       }
 
       updateProgressBar(id = 'pb',
-                        value = 4,
-                        total = 6,
+                        value = 6,
+                        total = 8,
                         title = 'Directional movement analysis')
 
     })
@@ -1146,8 +1186,8 @@
       }
 
       updateProgressBar(id = 'pb',
-                        value = 5,
-                        total = 6,
+                        value = 7,
+                        total = 8,
                         title = "Hotelling's test")
 
     })
@@ -1277,8 +1317,8 @@
       }
 
       updateProgressBar(id = 'pb',
-                        value = 6,
-                        total = 6,
+                        value = 8,
+                        total = 8,
                         title = 'Dimensionality reduction')
 
     })
