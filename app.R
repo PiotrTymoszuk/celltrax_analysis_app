@@ -56,8 +56,9 @@
                     autocov_plots(),
                     pair_analysis(),
                     dir_analysis(),
+                    hotellings(),
                     hetero_analysis(),
-                    get_data()
+                    get_data(),
         )
       )
     )
@@ -175,7 +176,7 @@
 
       updateProgressBar(id = 'pb',
                         value = 1,
-                        total = 5,
+                        total = 6,
                         title = 'Data imported')
 
     })
@@ -449,7 +450,7 @@
 
       updateProgressBar(id = 'pb',
                         value = 2,
-                        total = 5,
+                        total = 6,
                         title = 'Track statistic')
 
     })
@@ -566,7 +567,7 @@
 
       updateProgressBar(id = 'pb',
                         value = 3,
-                        total = 5,
+                        total = 6,
                         title = 'Displacement autocovariance')
 
     })
@@ -665,12 +666,16 @@
 
       updateProgressBar(id = 'pb',
                         value = 3,
-                        total = 5,
+                        total = 6,
                         title = 'Cell pair analysis')
 
     })
 
     ## Directional motion analysis -------
+
+    ### track plots ------
+
+    #### generating the plots
 
     track_plots <- reactive({
 
@@ -687,7 +692,180 @@
             coverage = input$track_coverage/100,
             cust_theme = theme_shiny())
 
+
+
     })
+
+    #### setting the initial values of the axes ranges
+
+    init_track_ranges <- reactiveValues()
+
+    observe({
+
+      init_track_ranges$raw_range <- track_plots()[[1]]$data[c('x', 'y')] %>%
+        map(range)
+
+      init_track_ranges$norm_range <- track_plots()[[2]]$data[c('x', 'y')] %>%
+        map(range)
+
+    })
+
+    isolate(init_track_ranges$raw_range)
+    isolate(init_track_ranges$norm_range)
+
+    #### dynamic update of the scale ranges
+
+    observe({
+
+      raw_range <- track_plots()[[1]]$data[c('x', 'y')] %>%
+        map(range)
+
+      updateNumericInputIcon(inputId = 'x_min_tracks_raw',
+                             value = raw_range[[1]][1])
+
+      updateNumericInputIcon(inputId = 'x_max_tracks_raw',
+                             value = raw_range[[1]][2])
+
+      updateNumericInputIcon(inputId = 'y_min_tracks_raw',
+                             value = raw_range[[2]][1])
+
+      updateNumericInputIcon(inputId = 'y_max_tracks_raw',
+                             value = raw_range[[2]][2])
+
+    })
+
+    observe({
+
+      norm_range <- track_plots()[[2]]$data[c('x', 'y')] %>%
+        map(range)
+
+      updateNumericInputIcon(inputId = 'x_min_tracks_norm',
+                             value = norm_range[[1]][1])
+
+      updateNumericInputIcon(inputId = 'x_max_tracks_norm',
+                             value = norm_range[[1]][2])
+
+      updateNumericInputIcon(inputId = 'y_min_tracks_norm',
+                             value = norm_range[[2]][1])
+
+      updateNumericInputIcon(inputId = 'y_max_tracks_norm',
+                             value = norm_range[[2]][2])
+
+
+    })
+
+    observeEvent(input$tracks_raw_refresh, {
+
+      updateNumericInputIcon(inputId = 'x_min_tracks_raw',
+                             value = init_track_ranges$raw_range[[1]][1])
+
+      updateNumericInputIcon(inputId = 'x_max_tracks_raw',
+                             value = init_track_ranges$raw_range[[1]][2])
+
+      updateNumericInputIcon(inputId = 'y_min_tracks_raw',
+                             value = init_track_ranges$raw_range[[2]][1])
+
+      updateNumericInputIcon(inputId = 'y_max_tracks_raw',
+                             value = init_track_ranges$raw_range[[2]][2])
+
+    })
+
+    observeEvent(input$tracks_norm_refresh, {
+
+      updateNumericInputIcon(inputId = 'x_min_tracks_norm',
+                             value = init_track_ranges$norm_range[[1]][1])
+
+      updateNumericInputIcon(inputId = 'x_max_tracks_norm',
+                             value = init_track_ranges$norm_range[[1]][2])
+
+      updateNumericInputIcon(inputId = 'y_min_tracks_norm',
+                             value = init_track_ranges$norm_range[[2]][1])
+
+      updateNumericInputIcon(inputId = 'y_max_tracks_norm',
+                             value = init_track_ranges$norm_range[[2]][2])
+
+    })
+
+    track_plot_raw <- reactive({
+
+      track_plots()[[1]] +
+        scale_x_continuous(limits = c(input$x_min_tracks_raw,
+                                      input$x_max_tracks_raw)) +
+        scale_y_continuous(limits = c(input$y_min_tracks_raw,
+                                      input$y_max_tracks_raw))
+
+    })
+
+    track_plot_norm <- reactive({
+
+      track_plots()[[2]] +
+        scale_x_continuous(limits = c(input$x_min_tracks_norm,
+                                      input$x_max_tracks_norm)) +
+        scale_y_continuous(limits = c(input$y_min_tracks_norm,
+                                      input$y_max_tracks_norm))
+
+    })
+
+    ## plotting
+
+    output$tracks_raw <- renderPlot({
+
+      track_plot_raw()
+
+    })
+
+    output$tracks_norm <- renderPlot({
+
+      track_plot_norm()
+
+    })
+
+    #### download
+
+    output$download_tracks_raw <- downloadHandler(
+
+      filename = function() {
+
+        return(paste0('track_plot_', Sys.Date(), '.pdf'))
+
+      },
+
+      content = function(con) {
+
+        ggsave(filename = con,
+               plot = track_plot_raw() + theme_trax(),
+               device = cairo_pdf,
+               width = 160,
+               height = 160,
+               units = 'mm')
+
+      }
+
+    )
+
+
+    output$download_tracks_norm <- downloadHandler(
+
+      filename = function() {
+
+        return(paste0('track_plot_normalized_', Sys.Date(), '.pdf'))
+
+      },
+
+      content = function(con) {
+
+        ggsave(filename = con,
+               plot = track_plot_norm() + theme_trax(),
+               device = cairo_pdf,
+               width = 160,
+               height = 160,
+               units = 'mm')
+
+      }
+
+    )
+
+    ### vector plots ------
 
     vector_plots <- reactive({
 
@@ -706,6 +884,196 @@
              cust_theme = theme_shiny())
 
     })
+
+    #### initial scale ranges
+
+    init_vector_ranges <- reactiveValues()
+
+    observe({
+
+      init_vector_ranges$raw_range <- vector_plots()[[1]]$data[c('x', 'y')] %>%
+        map(range)
+
+      init_vector_ranges$norm_range <- vector_plots()[[2]]$data[c('x', 'y')] %>%
+        map(range)
+
+    })
+
+    isolate(init_vector_ranges$raw_range)
+    isolate(init_vector_ranges$norm_range)
+
+    #### dynamic ranges of the axes
+
+    observe({
+
+      raw_range <- vector_plots()[[1]]$data[c('x', 'y')] %>%
+        map(range)
+
+      updateNumericInputIcon(inputId = 'x_min_vectors_raw',
+                             value = raw_range[[1]][1])
+
+      updateNumericInputIcon(inputId = 'x_max_vectors_raw',
+                             value = raw_range[[1]][2])
+
+      updateNumericInputIcon(inputId = 'y_min_vectors_raw',
+                             value = raw_range[[2]][1])
+
+      updateNumericInputIcon(inputId = 'y_max_vectors_raw',
+                             value = raw_range[[2]][2])
+
+    })
+
+    observe({
+
+      norm_range <- vector_plots()[[2]]$data[c('x', 'y')] %>%
+        map(range)
+
+      updateNumericInputIcon(inputId = 'x_min_vectors_norm',
+                             value = norm_range[[1]][1])
+
+      updateNumericInputIcon(inputId = 'x_max_vectors_norm',
+                             value = norm_range[[1]][2])
+
+      updateNumericInputIcon(inputId = 'y_min_vectors_norm',
+                             value = norm_range[[2]][1])
+
+      updateNumericInputIcon(inputId = 'y_max_vectors_norm',
+                             value = norm_range[[2]][2])
+
+    })
+
+    observeEvent(input$vectors_raw_refresh, {
+
+      updateNumericInputIcon(inputId = 'x_min_vectors_raw',
+                             value = init_vector_ranges$raw_range[[1]][1])
+
+      updateNumericInputIcon(inputId = 'x_max_vectors_raw',
+                             value = init_vector_ranges$raw_range[[1]][2])
+
+      updateNumericInputIcon(inputId = 'y_min_vectors_raw',
+                             value = init_vector_ranges$raw_range[[2]][1])
+
+      updateNumericInputIcon(inputId = 'y_max_vectors_raw',
+                             value = init_vector_ranges$raw_range[[2]][2])
+
+    })
+
+    observeEvent(input$vectors_norm_refresh, {
+
+      updateNumericInputIcon(inputId = 'x_min_vectors_norm',
+                             value = init_vector_ranges$norm_range[[1]][1])
+
+      updateNumericInputIcon(inputId = 'x_max_vectors_norm',
+                             value = init_vector_ranges$norm_range[[1]][2])
+
+      updateNumericInputIcon(inputId = 'y_min_vectors_norm',
+                             value = init_vector_ranges$norm_range[[2]][1])
+
+      updateNumericInputIcon(inputId = 'y_max_vectors_norm',
+                             value = init_vector_ranges$norm_range[[2]][2])
+
+    })
+
+    vector_plot_raw <- reactive({
+
+      vector_plots()[[1]] +
+        scale_x_continuous(limits = c(input$x_min_vectors_raw,
+                                      input$x_max_vectors_raw)) +
+        scale_y_continuous(limits = c(input$y_min_vectors_raw,
+                                      input$y_max_vectors_raw))
+
+    })
+
+    vector_plot_norm <- reactive({
+
+      vector_plots()[[2]] +
+        scale_x_continuous(limits = c(input$x_min_vectors_norm,
+                                      input$x_max_vectors_norm)) +
+        scale_y_continuous(limits = c(input$y_min_vectors_norm,
+                                      input$y_max_vectors_norm))
+
+    })
+
+    ## plotting
+
+    output$vectors_raw <- renderPlot({
+
+      vector_plot_raw()
+
+    })
+
+    output$vectors_norm <- renderPlot({
+
+      vector_plot_norm()
+
+    })
+
+    output$download_vectors_raw <- downloadHandler(
+
+      filename = function() {
+
+        return(paste0('displ_vector_plot_', Sys.Date(), '.pdf'))
+
+      },
+
+      content = function(con) {
+
+        ggsave(filename = con,
+               plot = vector_plot_raw() + theme_trax(),
+               device = cairo_pdf,
+               width = 160,
+               height = 160,
+               units = 'mm')
+
+      }
+
+    )
+
+    output$download_vectors_norm <- downloadHandler(
+
+      filename = function() {
+
+        return(paste0('displ_vector_plot_normalized_', Sys.Date(), '.pdf'))
+
+      },
+
+      content = function(con) {
+
+        ggsave(filename = con,
+               plot = vector_plot_norm() + theme_trax(),
+               device = cairo_pdf,
+               width = 160,
+               height = 160,
+               units = 'mm')
+
+      }
+
+    )
+
+    qc <- observe({
+
+      if(!all(c(is.ggplot(disp_plots()[[1]]),
+                is.ggplot(straight_plots()[[1]]),
+                is.ggplot(bic_plots()[[1]]),
+                is.ggplot(autocov_plots()[[1]]),
+                is.ggplot(pair_plots()[[1]]),
+                is.ggplot(track_plots()[[1]])))) {
+
+        showNotification('Directionality analysis error',
+                         duration = NULL,
+                         closeButton = TRUE,
+                         type = 'error')
+
+      }
+
+      updateProgressBar(id = 'pb',
+                        value = 4,
+                        total = 6,
+                        title = 'Directional movement analysis')
+
+    })
+
+    ## Hotelling's plot --------
 
     test_results <- reactive({
 
@@ -733,119 +1101,11 @@
 
     })
 
-    output$tracks_raw <- renderPlot({
-
-      track_plots()[[1]]
-
-    })
-
-    output$vectors_raw <- renderPlot({
-
-      vector_plots()[[1]]
-
-    })
-
-    output$tracks_norm <- renderPlot({
-
-      track_plots()[[2]]
-
-    })
-
-    output$vectors_norm <- renderPlot({
-
-      vector_plots()[[2]]
-
-    })
-
     output$hotellings_plot <- renderPlot({
 
       hotellings_plot()
 
     })
-
-    output$download_tracks_raw <- downloadHandler(
-
-      filename = function() {
-
-        return(paste0('track_plot_', Sys.Date(), '.pdf'))
-
-      },
-
-      content = function(con) {
-
-        ggsave(filename = con,
-               plot = track_plots()[[1]] + theme_trax(),
-               device = cairo_pdf,
-               width = 160,
-               height = 160,
-               units = 'mm')
-
-      }
-
-    )
-
-    output$download_vectors_raw <- downloadHandler(
-
-      filename = function() {
-
-        return(paste0('displ_vector_plot_', Sys.Date(), '.pdf'))
-
-      },
-
-      content = function(con) {
-
-        ggsave(filename = con,
-               plot = vector_plots()[[1]] + theme_trax(),
-               device = cairo_pdf,
-               width = 160,
-               height = 160,
-               units = 'mm')
-
-      }
-
-    )
-
-    output$download_tracks_norm <- downloadHandler(
-
-      filename = function() {
-
-        return(paste0('track_plot_normalized_', Sys.Date(), '.pdf'))
-
-      },
-
-      content = function(con) {
-
-        ggsave(filename = con,
-               plot = track_plots()[[2]] + theme_trax(),
-               device = cairo_pdf,
-               width = 160,
-               height = 160,
-               units = 'mm')
-
-      }
-
-    )
-
-    output$download_vectors_norm <- downloadHandler(
-
-      filename = function() {
-
-        return(paste0('displ_vector_plot_normalized_', Sys.Date(), '.pdf'))
-
-      },
-
-      content = function(con) {
-
-        ggsave(filename = con,
-               plot = vector_plots()[[2]] + theme_trax(),
-               device = cairo_pdf,
-               width = 160,
-               height = 160,
-               units = 'mm')
-
-      }
-
-    )
 
     output$download_hotellings <- downloadHandler(
 
@@ -875,9 +1135,10 @@
                 is.ggplot(bic_plots()[[1]]),
                 is.ggplot(autocov_plots()[[1]]),
                 is.ggplot(pair_plots()[[1]]),
-                is.ggplot(track_plots()[[1]])))) {
+                is.ggplot(track_plots()[[1]]),
+                is.ggplot(hotellings_plot())))) {
 
-        showNotification('Directionality analysis error',
+        showNotification("Hotelling's test error",
                          duration = NULL,
                          closeButton = TRUE,
                          type = 'error')
@@ -885,9 +1146,9 @@
       }
 
       updateProgressBar(id = 'pb',
-                        value = 4,
-                        total = 5,
-                        title = 'Directional movement analysis')
+                        value = 5,
+                        total = 6,
+                        title = "Hotelling's test")
 
     })
 
@@ -945,7 +1206,8 @@
 
     output$scree_plot <- renderPlot({
 
-      red_plots()[[1]]
+      red_plots()[[1]] +
+        expand_limits(y = 0)
 
     })
 
@@ -1015,8 +1277,8 @@
       }
 
       updateProgressBar(id = 'pb',
-                        value = 5,
-                        total = 5,
+                        value = 6,
+                        total = 6,
                         title = 'Dimensionality reduction')
 
     })

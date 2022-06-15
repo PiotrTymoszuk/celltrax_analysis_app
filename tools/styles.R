@@ -38,6 +38,11 @@
                font-family: Bahnschrift, Verdana, Helvetica
             }
 
+            h5 {
+               font-size: 20;
+               font-family: Bahnschrift, Verdana, Helvetica
+            }
+
             .shiny-text-output {
               font_size: 18,
               font-family: Bahnschrift, Verdana, Helvetica
