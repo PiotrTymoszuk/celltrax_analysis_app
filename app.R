@@ -14,6 +14,7 @@
   library(rlang)
   library(clustTools)
   library(stringi)
+  library(shinyBS)
 
   source('./tools/styles.R')
   source('./tools/main_panels.R')

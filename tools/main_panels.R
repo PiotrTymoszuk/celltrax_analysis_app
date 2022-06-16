@@ -63,7 +63,11 @@
                              total = 8,
                              title = ''),
                  br(),
-                 width = 3)
+                 width = 3,
+                 bsTooltip(id = 'launcher',
+                           title = 'start the analysis once a file is provided'),
+                 bsTooltip(id = 'refresh',
+                           title = 'start over with a new sample'))
 
   }
 
